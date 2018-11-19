@@ -185,7 +185,7 @@ if($task == 'domain_checker')
 
     	$count = 0;
 		
-		foreach($rows as $row)
+		foreach($rows as $row){
 			$data[$count]['id']                    = $row['id'];
 			$data[$count]['domain']                = $row['domain'];
 			$data[$count]['status']                = $row['status'];
