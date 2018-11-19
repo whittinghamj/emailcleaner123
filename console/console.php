@@ -230,9 +230,9 @@ if($task == 'domain_checker_multi')
 	$records                = $argv[2];
 	$threads 				= $argv[3];
 	
-	require $base.'../inc/cron.helper.php';
-	if ( ( $pid = cronHelper::lock() ) !== FALSE ) 
-	{
+	// require $base.'../inc/cron.helper.php';
+	// if ( ( $pid = cronHelper::lock() ) !== FALSE ) 
+	// {
 		console_output("Spawning ".$threads." children.");
 		
 		$pids = array();
@@ -300,12 +300,12 @@ if($task == 'domain_checker_multi')
 		{
 			pcntl_waitpid($pids[$i], $status, WUNTRACED);
 		}
-	}else{
-		console_output(
-			$colors->getColoredString(
-				"Script already running", 
-			"pink", "black"));
-	}
+	// }else{
+	// 	console_output(
+	// 		$colors->getColoredString(
+	// 			"Script already running", 
+	// 		"pink", "black"));
+	// }
 }
 
 if($task == 'domain_checker_multi')
