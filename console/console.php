@@ -308,7 +308,7 @@ if($task == 'domain_checker_multi')
 	// }
 }
 
-if($task == 'check_role_accounts_multi')
+if($task == 'check_role_accounts')
 {
 	$records                = $argv[2];
 	$threads 				= $argv[3];
