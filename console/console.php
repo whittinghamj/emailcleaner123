@@ -180,15 +180,12 @@ if($task == 'domain_checker')
 		$records                = $argv[2];
 		$search_records         = $records;
 
-		$query      = "SELECT * FROM `email_domains` WHERE 
-				`last_checked` IS NULL OR 
-				`last_checked` = '0'
-				LIMIT 10
-				";
-		$result     = mysql_query($query) or die(mysql_error());
-		$count 		= mysql_num_rows($result);
+		$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' LIMIT 10 ");
+    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+    	$count = 0;
 		
-		while($row = mysql_fetch_array($result)){
+		foreach($rows as $row)
 			$data[$count]['id']                    = $row['id'];
 			$data[$count]['domain']                = $row['domain'];
 			$data[$count]['status']                = $row['status'];
