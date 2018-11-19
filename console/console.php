@@ -252,7 +252,7 @@ if($task == 'domain_checker_multi')
 				$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' ORDER BY RAND() LIMIT ".$search_records);
 		    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
-		    	$count = 0;
+		    	$count = 1;
 				
 				foreach($rows as $row){
 					$data[$count]['id']                    = $row['id'];
