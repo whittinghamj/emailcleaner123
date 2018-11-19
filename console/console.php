@@ -308,6 +308,102 @@ if($task == 'domain_checker_multi')
 	// }
 }
 
+if($task == 'check_role_accounts_multi')
+{
+	$records                = $argv[2];
+	$threads 				= $argv[3];
+	
+	// require $base.'../inc/cron.helper.php';
+	// if ( ( $pid = cronHelper::lock() ) !== FALSE ) 
+	// {
+		console_output("Spawning ".$threads." children.");
+		
+		$pids = array();
+				
+		for ( $i = 0; $i < $threads; $i++ ) 
+		{
+			$pids[$i] = pcntl_fork();
+
+			if ( !$pids[$i] ) 
+			{
+				
+				include($base.'../inc/db.php');
+
+				// get list of role accounts
+				$query = $db->query("SELECT * FROM `role_accounts` ");
+		    	$role_accounts_bits = $query->fetchAll(PDO::FETCH_ASSOC);
+
+		    	foreach($role_accounts_bits as $bits)
+		    	{
+		    		$role_accounts[] = $bits['role_account'];
+		    	}
+
+		    	print_r($role_accounts);
+
+		    	die();
+				
+				$records                = $argv[2];
+				$search_records         = $records;
+
+				$query = $db->query("SELECT `email` FROM `one_billion_emails` WHERE  `checked` IS NULL ORDER BY RAND() LIMIT ".$search_records);
+		    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+		    	$count = 1;
+				
+				foreach($rows as $row){
+					$data[$count]['id']                    	= $row['id'];
+					$data[$count]['email']                	= $row['email'];
+					
+					
+					if(checkdnsrr($data[$count]['domain'], 'ANY')){
+						// domain exists, lets set to active then check MX records
+						$update = $db->exec("UPDATE `email_domains` SET `status` = 'active' WHERE `id` = '".$data[$count]['id']."' ");
+
+						// validate mx
+						if(checkdnsrr($data[$count]['domain'], 'MX')){
+							// do nothing, its active and has a valid MX record
+							console_output(
+								$colors->getColoredString(
+									number_format($count) . ') "' . $data[$count]['domain'] . '" is active and has valid MX record.', 
+								"green", "black"));
+						}else{
+							console_output(
+								$colors->getColoredString(
+									number_format($count) . ') "' . $data[$count]['domain'] . '" is active but has no MX record.', 
+								"blue", "black"));
+							$update = $db->exec("UPDATE `email_domains` SET `status` = 'mxserver_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
+
+						}
+					}else{
+						// domain does not exist
+						console_output(
+								$colors->getColoredString(
+									number_format($count) . ') "' . $data[$count]['domain'] . '" is not active.', 
+								"red", "black"));
+						$update = $db->exec("UPDATE `email_domains` SET `status` = 'domain_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
+					}
+
+					$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
+					
+					$count++;
+				}
+				
+				exit();
+			}
+		}
+		
+		for ( $i = 0; $i < $threads; $i++ ) 
+		{
+			pcntl_waitpid($pids[$i], $status, WUNTRACED);
+		}
+	// }else{
+	// 	console_output(
+	// 		$colors->getColoredString(
+	// 			"Script already running", 
+	// 		"pink", "black"));
+	// }
+}
+
 if($task == 'bulk_import_bounces')
 {
 	$sql="
