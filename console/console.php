@@ -338,7 +338,7 @@ if($task == 'check_role_accounts')
 			$records                = $argv[2];
 			$search_records         = $records;
 
-			$query = $db->query("SELECT `email` FROM `one_billion_emails` WHERE  `checked` IS NULL ORDER BY `id` LIMIT ".$search_records);
+			$query = $db->query("SELECT `id`,`email` FROM `one_billion_emails` WHERE  `checked` IS NULL ORDER BY `id` LIMIT ".$search_records);
 	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	    	$count = 1;
