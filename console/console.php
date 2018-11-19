@@ -225,6 +225,62 @@ if($task == 'domain_checker')
 	}
 }
 
+if($task == 'sanitize_emails')
+{
+	$records                = $argv[2];
+	$threads 				= $argv[3];
+	
+	console_output("Spawning ".$threads." children.");
+	
+	$pids = array();
+			
+	for ( $i = 0; $i < $threads; $i++ ) 
+	{
+		$pids[$i] = pcntl_fork();
+
+		if ( !$pids[$i] ) 
+		{
+			include($base.'../inc/db.php');
+			
+			$records                = $argv[2];
+			$search_records         = $records;
+
+			$query = $db->query("SELECT `id`,`email` FROM `emails` WHERE  `checked` = '0' LIMIT ".$search_records);
+	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+	    	$count = 1;
+			
+			foreach($rows as $row){
+				$data[$count]['id']                    	= $row['id'];
+				$data[$count]['email']                	= $row['email'];
+				$data[$count]['bits']                	= explode("@", $row['email']);
+				$data[$count]['user']					= $data[$count]['bits'][0];
+				$data[$count]['domain']					= $data[$count]['bits'][1];
+
+				preg_replace( "/\r|\n/", "", $data[$count]['email'] );
+				preg_replace( "/\r|\n/", "", $data[$count]['domain'] );
+
+				$update = $db->exec("UPDATE `emails` SET `email` = '".$data[$count]['email']."' WHERE `id` = '".$data[$count]['id']."' ");
+				$update = $db->exec("UPDATE `emails` SET `domain` = '".$data[$count]['domain']."' WHERE `id` = '".$data[$count]['id']."' ");
+				
+				console_output(
+					$colors->getColoredString(
+						number_format($count) . ') "' . $data[$count]['email'] . '" is now sanitized.', 
+					"green", "black"));
+			
+				$count++;
+			}
+			
+			exit();
+		}
+	}
+	
+	for ( $i = 0; $i < $threads; $i++ ) 
+	{
+		pcntl_waitpid($pids[$i], $status, WUNTRACED);
+	}
+}
+
 if($task == 'domain_checker_multi')
 {
 	$records                = $argv[2];
