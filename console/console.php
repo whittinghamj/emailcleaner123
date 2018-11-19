@@ -180,7 +180,7 @@ if($task == 'domain_checker')
 		$records                = $argv[2];
 		$search_records         = $records;
 
-		$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' LIMIT 10 ");
+		$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' LIMIT $search_records ORDER BY RAND() ");
     	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
     	$count = 0;
@@ -209,7 +209,7 @@ if($task == 'domain_checker')
 					$update = $db->exec("UPDATE `email_domains` SET `status` = 'mxserver_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
 
 				}
-			} else {
+			}else{
 				// domain does not exist
 				console_output(
 						$colors->getColoredString(
