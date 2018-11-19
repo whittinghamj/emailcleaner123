@@ -323,7 +323,6 @@ if($task == 'check_role_accounts')
 
 		if ( !$pids[$i] ) 
 		{
-			
 			include($base.'../inc/db.php');
 
 			// get list of role accounts
@@ -338,7 +337,7 @@ if($task == 'check_role_accounts')
 			$records                = $argv[2];
 			$search_records         = $records;
 
-			$query = $db->query("SELECT `id`,`email` FROM `one_billion_emails` WHERE  `checked` IS NULL ORDER BY RAND() LIMIT ".$search_records);
+			$query = $db->query("SELECT * FROM `emails` WHERE  `checked` == '0' ORDER BY RAND() LIMIT ".$search_records);
 	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	    	$count = 1;
@@ -358,7 +357,7 @@ if($task == 'check_role_accounts')
 							number_format($count) . ') "' . $data[$count]['email'] . '" is a role account.', 
 						"red", "black"));
 
-					$update = $db->exec("UPDATE `email_domains` SET `status` = 'role_account' WHERE `id` = '".$data[$count]['id']."' ");
+					$update = $db->exec("UPDATE `emails` SET `status` = 'role_account' WHERE `id` = '".$data[$count]['id']."' ");
 				}else{
 
 					console_output(
@@ -366,10 +365,10 @@ if($task == 'check_role_accounts')
 							number_format($count) . ') "' . $data[$count]['email'] . '" is not a role account.', 
 						"green", "black"));
 
-					$update = $db->exec("UPDATE `email_domains` SET `status` = 'role_account' WHERE `id` = '".$data[$count]['id']."' ");
+					$update = $db->exec("UPDATE `emails` SET `status` = 'role_account' WHERE `id` = '".$data[$count]['id']."' ");
 				}
 
-				$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
+				$update = $db->exec("UPDATE `emails` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
 				
 				$count++;
 			}
