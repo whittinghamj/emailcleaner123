@@ -180,7 +180,7 @@ if($task == 'domain_checker')
 		$records                = $argv[2];
 		$search_records         = $records;
 
-		$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' LIMIT $search_records ORDER BY RAND() ");
+		$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' ORDER BY RAND() LIMIT ".$search_records);
     	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
     	$count = 0;
