@@ -337,7 +337,7 @@ if($task == 'check_role_accounts')
 			$records                = $argv[2];
 			$search_records         = $records;
 
-			$query = $db->query("SELECT * FROM `emails` WHERE  `checked` = '0' ORDER BY RAND() LIMIT ".$search_records);
+			$query = $db->query("SELECT * FROM `emails` WHERE  `checked` = '0' LIMIT ".$search_records);
 	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	    	$count = 1;
@@ -357,7 +357,7 @@ if($task == 'check_role_accounts')
 							number_format($count) . ') "' . $data[$count]['email'] . '" is a role account.', 
 						"red", "black"));
 
-					$update = $db->exec("UPDATE `emails` SET `status` = 'role_account' WHERE `id` = '".$data[$count]['id']."' ");
+					$update = $db->exec("UPDATE `emails` SET `checked_role_account` = 'failed' WHERE `id` = '".$data[$count]['id']."' ");
 				}else{
 
 					console_output(
@@ -365,10 +365,10 @@ if($task == 'check_role_accounts')
 							number_format($count) . ') "' . $data[$count]['email'] . '" is not a role account.', 
 						"green", "black"));
 
-					$update = $db->exec("UPDATE `emails` SET `status` = 'role_account' WHERE `id` = '".$data[$count]['id']."' ");
+					$update = $db->exec("UPDATE `emails` SET `checked_role_account` = 'passwd' WHERE `id` = '".$data[$count]['id']."' ");
 				}
 
-				$update = $db->exec("UPDATE `emails` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
+				$update = $db->exec("UPDATE `emails` SET `checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
 				
 				$count++;
 			}
