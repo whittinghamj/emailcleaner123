@@ -257,8 +257,8 @@ if($task == 'sanitize_emails')
 				$data[$count]['user']					= $data[$count]['bits'][0];
 				$data[$count]['domain']					= $data[$count]['bits'][1];
 
-				preg_replace( "/\r|\n/", "", $data[$count]['email'] );
-				preg_replace( "/\r|\n/", "", $data[$count]['domain'] );
+				$data[$count]['email'] 					= str_replace(array("\r", "\r\n","\n"), '', $data[$count]['email']);
+				$data[$count]['domain'] 				= str_replace(array("\r", "\r\n", "\n"), '', $data[$count]['domain']);
 
 				$update = $db->exec("UPDATE `emails` SET `email` = '".$data[$count]['email']."' WHERE `id` = '".$data[$count]['id']."' ");
 				$update = $db->exec("UPDATE `emails` SET `domain` = '".$data[$count]['domain']."' WHERE `id` = '".$data[$count]['id']."' ");
@@ -267,7 +267,7 @@ if($task == 'sanitize_emails')
 					$colors->getColoredString(
 						number_format($count) . ') "' . $data[$count]['email'] . '" is now sanitized.', 
 					"green", "black"));
-			
+
 				$count++;
 			}
 			
