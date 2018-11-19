@@ -289,7 +289,7 @@ if($task == 'domain_checker_multi')
 
 					$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ") or die(mysql_error());
 					
-					$count = $count - 1;
+					$count++;
 				}
 				
 				exit();
