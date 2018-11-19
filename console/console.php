@@ -245,7 +245,7 @@ if($task == 'sanitize_emails')
 			$records                = $argv[2];
 			$search_records         = $records;
 
-			$query = $db->query("SELECT `id`,`email` FROM `emails` WHERE  `domain` = '' LIMIT ".$search_records);
+			$query = $db->query("SELECT `id`,`email` FROM `emails` WHERE  `domain` = '' ORDER BY RAND() LIMIT ".$search_records);
 	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	    	$count = 1;
