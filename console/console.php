@@ -199,12 +199,12 @@ if($task == 'domain_checker')
 					// do nothing, its active and has a valid MX record
 					console_output(
 						$colors->getColoredString(
-							number_format($count) . ') ' . $data[$count]['domain'] . " is active and has valid MX record.", 
+							number_format($count) . ') "' . $data[$count]['domain'] . '" is active and has valid MX record.', 
 						"green", "black"));
 				}else{
 					console_output(
 						$colors->getColoredString(
-							number_format($count) . ') ' . $data[$count]['domain'] . " is active but has no MX record.", 
+							number_format($count) . ') "' . $data[$count]['domain'] . '" is active but has no MX record.', 
 						"blue", "black"));
 					$update = $db->exec("UPDATE `email_domains` SET `status` = 'mxserver_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
 
@@ -213,7 +213,7 @@ if($task == 'domain_checker')
 				// domain does not exist
 				console_output(
 						$colors->getColoredString(
-							number_format($count) . ') ' . $data[$count]['domain'] . " is not active.", 
+							number_format($count) . ') "' . $data[$count]['domain'] . '" is not active.', 
 						"red", "black"));
 				$update = $db->exec("UPDATE `email_domains` SET `status` = 'domain_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ") or die(mysql_error());
 			}
