@@ -313,95 +313,75 @@ if($task == 'check_role_accounts')
 	$records                = $argv[2];
 	$threads 				= $argv[3];
 	
-	// require $base.'../inc/cron.helper.php';
-	// if ( ( $pid = cronHelper::lock() ) !== FALSE ) 
-	// {
-		console_output("Spawning ".$threads." children.");
-		
-		$pids = array();
-				
-		for ( $i = 0; $i < $threads; $i++ ) 
+	console_output("Spawning ".$threads." children.");
+	
+	$pids = array();
+			
+	for ( $i = 0; $i < $threads; $i++ ) 
+	{
+		$pids[$i] = pcntl_fork();
+
+		if ( !$pids[$i] ) 
 		{
-			$pids[$i] = pcntl_fork();
+			
+			include($base.'../inc/db.php');
 
-			if ( !$pids[$i] ) 
-			{
+			// get list of role accounts
+			$query = $db->query("SELECT * FROM `role_accounts` ");
+	    	$role_accounts_bits = $query->fetchAll(PDO::FETCH_ASSOC);
+
+	    	foreach($role_accounts_bits as $bits)
+	    	{
+	    		$role_accounts[] = $bits['role_account'];
+	    	}
+			
+			$records                = $argv[2];
+			$search_records         = $records;
+
+			$query = $db->query("SELECT `email` FROM `one_billion_emails` WHERE  `checked` IS NULL ORDER BY `id` LIMIT ".$search_records);
+	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+	    	$count = 1;
+			
+			foreach($rows as $row){
+				$data[$count]['id']                    	= $row['id'];
+				$data[$count]['email']                	= $row['email'];
+				$data[$count]['bits']                	= explode("@", $row['email']);
+				$data[$count]['user']					= $data[$count]['bits'][0];
+				$data[$count]['domain']					= $data[$count]['bits'][1];
 				
-				include($base.'../inc/db.php');
+				if(in_array($data[$count]['email'], $role_accounts)){
+					// match found in role accounts, flag email as bad
 
-				// get list of role accounts
-				$query = $db->query("SELECT * FROM `role_accounts` ");
-		    	$role_accounts_bits = $query->fetchAll(PDO::FETCH_ASSOC);
+					console_output(
+						$colors->getColoredString(
+							number_format($count) . ') "' . $data[$count]['email'] . '" is a role account.', 
+						"red", "black"));
 
-		    	foreach($role_accounts_bits as $bits)
-		    	{
-		    		$role_accounts[] = $bits['role_account'];
-		    	}
+					$update = $db->exec("UPDATE `email_domains` SET `status` = 'role_account' WHERE `id` = '".$data[$count]['id']."' ");
+				}else{
 
-		    	print_r($role_accounts);
+					console_output(
+						$colors->getColoredString(
+							number_format($count) . ') "' . $data[$count]['email'] . '" is not a role account.', 
+						"green", "black"));
 
-		    	die();
-				
-				$records                = $argv[2];
-				$search_records         = $records;
-
-				$query = $db->query("SELECT `email` FROM `one_billion_emails` WHERE  `checked` IS NULL ORDER BY RAND() LIMIT ".$search_records);
-		    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
-
-		    	$count = 1;
-				
-				foreach($rows as $row){
-					$data[$count]['id']                    	= $row['id'];
-					$data[$count]['email']                	= $row['email'];
-					
-					
-					if(checkdnsrr($data[$count]['domain'], 'ANY')){
-						// domain exists, lets set to active then check MX records
-						$update = $db->exec("UPDATE `email_domains` SET `status` = 'active' WHERE `id` = '".$data[$count]['id']."' ");
-
-						// validate mx
-						if(checkdnsrr($data[$count]['domain'], 'MX')){
-							// do nothing, its active and has a valid MX record
-							console_output(
-								$colors->getColoredString(
-									number_format($count) . ') "' . $data[$count]['domain'] . '" is active and has valid MX record.', 
-								"green", "black"));
-						}else{
-							console_output(
-								$colors->getColoredString(
-									number_format($count) . ') "' . $data[$count]['domain'] . '" is active but has no MX record.', 
-								"blue", "black"));
-							$update = $db->exec("UPDATE `email_domains` SET `status` = 'mxserver_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
-
-						}
-					}else{
-						// domain does not exist
-						console_output(
-								$colors->getColoredString(
-									number_format($count) . ') "' . $data[$count]['domain'] . '" is not active.', 
-								"red", "black"));
-						$update = $db->exec("UPDATE `email_domains` SET `status` = 'domain_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
-					}
-
-					$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
-					
-					$count++;
+					$update = $db->exec("UPDATE `email_domains` SET `status` = 'role_account' WHERE `id` = '".$data[$count]['id']."' ");
 				}
+
+				$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
 				
-				exit();
+				$count++;
 			}
+			
+			exit();
 		}
-		
-		for ( $i = 0; $i < $threads; $i++ ) 
-		{
-			pcntl_waitpid($pids[$i], $status, WUNTRACED);
-		}
-	// }else{
-	// 	console_output(
-	// 		$colors->getColoredString(
-	// 			"Script already running", 
-	// 		"pink", "black"));
-	// }
+	}
+	
+	for ( $i = 0; $i < $threads; $i++ ) 
+	{
+		pcntl_waitpid($pids[$i], $status, WUNTRACED);
+	}
 }
 
 if($task == 'bulk_import_bounces')
