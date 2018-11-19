@@ -284,10 +284,10 @@ if($task == 'domain_checker_multi')
 								$colors->getColoredString(
 									number_format($count) . ') "' . $data[$count]['domain'] . '" is not active.', 
 								"red", "black"));
-						$update = $db->exec("UPDATE `email_domains` SET `status` = 'domain_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ") or die(mysql_error());
+						$update = $db->exec("UPDATE `email_domains` SET `status` = 'domain_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
 					}
 
-					$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ") or die(mysql_error());
+					$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
 					
 					$count++;
 				}
