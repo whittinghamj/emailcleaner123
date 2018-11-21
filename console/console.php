@@ -584,4 +584,7 @@ if($task == 'get_domains_2')
 	}
 }
 
+// close the msyql / pdo connection
+$db=null;
+
 console_output("Finished.");
