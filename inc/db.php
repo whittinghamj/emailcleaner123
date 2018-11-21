@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // mysql settings
 
-$database['username']		= "root";
+$database['username']		= "whittinghamj";
 $database['password']		= "admin1372Dextor!#&@";
 $database['database']		= "emailcleaner123";
 $database['hostname']		= "64.71.170.18";
