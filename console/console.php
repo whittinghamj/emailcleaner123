@@ -180,7 +180,7 @@ if($task == 'domain_checker')
 		$records                = $argv[2];
 		$search_records         = $records;
 
-		$query = $db->query("SELECT * FROM `email_domains` WHERE `last_checked` = '0' ORDER BY RAND() LIMIT ".$search_records);
+		$query = $db->query("SELECT * FROM `email_domains` WHERE `last_checked` = '0' ORDER BY `id` LIMIT ".$search_records);
     	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
     	$count = 0;
@@ -220,7 +220,7 @@ if($task == 'domain_checker')
 
 			$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ") or die(mysql_error());
 			
-			$count = $count - 1;
+			$count++;
 		}
 	}
 }
