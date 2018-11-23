@@ -280,6 +280,8 @@ if($task == 'wash_emails')
 						"red", "black"));
 				}
 
+				$update = $db->exec("UPDATE `emails` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
+
 				$count++;
 			}
 			
