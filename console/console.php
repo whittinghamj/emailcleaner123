@@ -253,10 +253,7 @@ if($task == 'wash_emails')
 	    		$domains[] = $domain['domain'];
 	    	}
 
-	    	print_r($domains);
-	    	die();
-
-			$query = $db->query("SELECT `id`,`email`,`domain` FROM `emails` WHERE  `last_checked` IS NULL LIMIT ".$random_start_point.",".$search_records);
+			$query = $db->query("SELECT `id`,`email` FROM `emails` WHERE  `last_checked` IS NULL LIMIT ".$random_start_point.",".$search_records);
 	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	    	$count = 1;
@@ -264,17 +261,24 @@ if($task == 'wash_emails')
 			foreach($rows as $row){
 				$data[$count]['id']                    	= $row['id'];
 				$data[$count]['email']                	= $row['email'];
-				$data[$count]['domain']                	= $row['domain'];
+				$bits 									= explode("@", $row['email']);
+				$data[$count]['domain']                	= $bits[1];
 
 				if (in_array($data[$count]['domain'], $domains)) {
+					// domain is active, lets mark checked_dns and checked_mx
+					$update = $db->exec("UPDATE `emails` SET `checked_dns` = '1' WHERE `id` = '".$data[$count]['id']."' ");
+					$update = $db->exec("UPDATE `emails` SET `checked_mx` = '1' WHERE `id` = '".$data[$count]['id']."' ");
 
+					console_output(
+						$colors->getColoredString(
+							number_format($count) . ') "' . $data[$count]['email'] . '" passed DNS and MX checks.', 
+						"green", "black"));
+				}else{
+					console_output(
+						$colors->getColoredString(
+							number_format($count) . ') "' . $data[$count]['email'] . '" FAILED DNS and MX checks.', 
+						"red", "black"));
 				}
-
-				
-				console_output(
-					$colors->getColoredString(
-						number_format($count) . ') "' . $data[$count]['email'] . '" is now sanitized.', 
-					"green", "black"));
 
 				$count++;
 			}
