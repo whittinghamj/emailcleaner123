@@ -512,6 +512,8 @@ if($task == 'get_domains')
 	$records                = $argv[3];
 	$threads 				= $argv[2];
 
+	console_output("Spawning ".$threads." children with ".$records." jobs each.");
+
 	$pids = array();
 				
 	for ( $i = 0; $i < $threads; $i++ ) 
@@ -525,8 +527,6 @@ if($task == 'get_domains')
 			
 			$records                = $argv[3];
 			$random_start_point		= rand(000000,999999);
-
-			console_output("Getting email addresses.");
 			
 			$query = $db->query("SELECT `domain` FROM `emails` WHERE `domain_added_to_list` = '0' LIMIT ".$random_start_point.",".$records);
 		    $domains_array = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -547,6 +547,8 @@ if($task == 'get_domains')
 
 				$count = $count - 1;
 			}
+
+			exit();
 		}
 	}
 
