@@ -513,7 +513,7 @@ if($task == 'get_domains')
 	if ( ( $pid = cronHelper::lock() ) !== FALSE ) {
 		console_output("Getting email addresses.");
 		
-		$query = $db->query("SELECT `domain` FROM `emails` WHERE `domain_added_to_list` = '0' LIMIT 10 ");
+		$query = $db->query("SELECT `domain` FROM `emails` WHERE `domain_added_to_list` = '0' LIMIT 1000000 ");
 	    $domains_array = $query->fetchAll(PDO::FETCH_ASSOC);
 		
 		foreach($domains_array as $domain){
