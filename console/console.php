@@ -509,8 +509,8 @@ if($task == 'update_totals')
 if($task == 'get_domains')
 {
 
-	$records                = $argv[2];
-	$threads 				= $argv[3];
+	$records                = $argv[3];
+	$threads 				= $argv[2];
 
 	$pids = array();
 				
@@ -523,7 +523,7 @@ if($task == 'get_domains')
 			
 			include($base.'../inc/db.php');
 			
-			$records                = $argv[2];
+			$records                = $argv[3];
 			$random_start_point		= rand(000000,999999);
 
 			console_output("Getting email addresses.");
@@ -548,11 +548,11 @@ if($task == 'get_domains')
 				$count = $count - 1;
 			}
 		}
-		
-		for ( $i = 0; $i < $threads; $i++ ) 
-		{
-			pcntl_waitpid($pids[$i], $status, WUNTRACED);
-		}
+	}
+
+	for ( $i = 0; $i < $threads; $i++ ) 
+	{
+		pcntl_waitpid($pids[$i], $status, WUNTRACED);
 	}
 }
 
