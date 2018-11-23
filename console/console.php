@@ -246,8 +246,13 @@ if($task == 'sanitize_emails')
 			$search_records         = $records;
 			$random_start_point		= rand(000000,999999);
 
-			$query = $db->query("SELECT `id`,`email` FROM `emails` WHERE  `domain` = '' LIMIT ".$random_start_point.",".$search_records);
-	    	// $query = $db->query(" SELECT * FROM `emails` WHERE `id` >= (SELECT FLOOR( MAX(`id`) * RAND()) FROM `emails` ) ORDER BY `id` LIMIT 1; ");
+			$query = $db->query("SELECT * FROM `email_domains` WHERE  `status` = 'active' ";
+	    	$domains = $query->fetchAll(PDO::FETCH_ASSOC);
+
+	    	print_r($domains);
+	    	die();
+
+			$query = $db->query("SELECT `id`,`email`,`domain` FROM `emails` WHERE  `last_checked` IS NULL LIMIT ".$random_start_point.",".$search_records);
 	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	    	$count = 1;
@@ -255,15 +260,10 @@ if($task == 'sanitize_emails')
 			foreach($rows as $row){
 				$data[$count]['id']                    	= $row['id'];
 				$data[$count]['email']                	= $row['email'];
-				$data[$count]['bits']                	= explode("@", $row['email']);
-				$data[$count]['user']					= $data[$count]['bits'][0];
-				$data[$count]['domain']					= $data[$count]['bits'][1];
+				$data[$count]['domain']                	= $row['domain'];
 
-				$data[$count]['email'] 					= str_replace(array("\r", "\r\n","\n"), '', $data[$count]['email']);
-				$data[$count]['domain'] 				= str_replace(array("\r", "\r\n", "\n"), '', $data[$count]['domain']);
+				if (in_array($data[$count]['domain'], $domains)) {
 
-				$update = $db->exec("UPDATE `emails` SET `email` = '".$data[$count]['email']."' WHERE `id` = '".$data[$count]['id']."' ");
-				$update = $db->exec("UPDATE `emails` SET `domain` = '".$data[$count]['domain']."' WHERE `id` = '".$data[$count]['id']."' ");
 				
 				console_output(
 					$colors->getColoredString(
@@ -569,8 +569,7 @@ if($task == 'get_domains_2')
 		$count = count( $domains );
 		
 		foreach ( $domains as $domain ) {
-			mysql_query("UPDATE `emails` SET `domain` = '".$domain."' WHERE `email` LIKE '%@".$domain."' AND `domain` = '';
-") or die(mysql_error());
+			mysql_query("UPDATE `emails` SET `domain` = '".$domain."' WHERE `email` LIKE '%@".$domain."' AND `domain` = '';") or die(mysql_error());
 			
 			$input = mysql_query("INSERT IGNORE INTO `domains` 
 				(`domain`, `status`, `last_checked`)
@@ -582,6 +581,24 @@ if($task == 'get_domains_2')
 			$count = $count - 1;
 		}
 	}
+}
+
+if($task == 'import_multi')
+{
+	$threads 				= $argv[2];
+	
+	console_output("Spawning ".$threads." children.");
+	
+	for ($i=0; $i<$runs; $i++) {
+        for ($j=0; $j<$count; $j++) {
+            $pipe[$j] = popen("php -q run apt_update_process ".$slaves[$j], 'w');
+        }
+        
+        // wait for them to finish
+        for ($j=0; $j<$count; ++$j) {
+            pclose($pipe[$j]);
+        }
+    }
 }
 
 // close the msyql / pdo connection
