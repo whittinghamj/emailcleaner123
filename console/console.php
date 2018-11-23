@@ -543,7 +543,7 @@ if($task == 'get_domains')
 					VALUE
 					('".$domain."')");
 
-				console_output($count . ") ".$domain);
+				console_output(number_format($count) . ") ".$domain);
 
 				$count = $count - 1;
 			}
