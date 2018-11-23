@@ -246,7 +246,7 @@ if($task == 'wash_emails')
 			$search_records         = $records;
 			$random_start_point		= rand(000000,999999);
 
-			$query = $db->query("SELECT * FROM `email_domains` WHERE  `status` = 'active' ";
+			$query = $db->query("SELECT * FROM `email_domains` WHERE  `status` = 'active' ");
 	    	$domains = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	    	print_r($domains);
