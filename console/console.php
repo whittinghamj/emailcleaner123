@@ -523,10 +523,10 @@ if($task == 'get_domains')
 		$count = count( $domains );
 		
 		foreach ( $domains as $domain ) {
-			$input = mysql_query("INSERT IGNORE INTO `email_domains` 
+			$insert = $db->exec("INSERT IGNORE INTO `email_domains` 
 				(`domain`)
 				VALUE
-				('".$domain."')") or die(mysql_error());
+				('".$domain."')");
 
 			console_output($count . ") ".$domain);
 
