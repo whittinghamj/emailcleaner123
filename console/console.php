@@ -528,7 +528,8 @@ if($task == 'get_domains')
 			$records                = $argv[3];
 			$random_start_point		= rand(000000,999999);
 			
-			$query = $db->query("SELECT `domain` FROM `emails` WHERE `domain_added_to_list` = '0' LIMIT ".$random_start_point.",".$records);
+			$query = $db->query("SELECT `domain` FROM `emails` WHERE `domain` NOT IN (SELECT `domain` FROM `email_domains`)");
+			// $query = $db->query("SELECT `domain` FROM `emails` WHERE `domain_added_to_list` = '0' LIMIT ".$random_start_point.",".$records);
 		    $domains_array = $query->fetchAll(PDO::FETCH_ASSOC);
 			
 			foreach($domains_array as $domain){
