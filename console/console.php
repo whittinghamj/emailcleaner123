@@ -506,7 +506,7 @@ if($task == 'update_totals')
 	}
 }
 
-if($task == ' source')
+if($task == 'get_domains')
 {
 	$records                = $argv[2];
 	require $base.'../inc/cron.helper.php';
