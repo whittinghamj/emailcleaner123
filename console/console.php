@@ -506,40 +506,27 @@ if($task == 'update_totals')
 	}
 }
 
-if($task == 'get_domains')
+if($task == ' source')
 {
 	$records                = $argv[2];
 	require $base.'../inc/cron.helper.php';
 	if ( ( $pid = cronHelper::lock() ) !== FALSE ) {
 		console_output("Getting email addresses.");
-		$query 		= "SELECT `id`,`email`,`domain` FROM `emails` WHERE `domain` = '' ORDER BY `id` LIMIT ".$records;
-		$result		= mysql_query($query) or die(mysql_error());
-		$count		= mysql_num_rows($result);
-		while($row = mysql_fetch_array($result)){
-			$id					= $row['id'];
-			$bits				= explode("@", $row['email']);
-			$domains[]			= $bits[1];
-			
-			console_output("Processing ".$row['email'] . " | " . $row['domain']);
-			
-			mysql_query("UPDATE `emails` SET `domain` = '".$bits[1]."' WHERE `id` = '".$id."' ") or die(mysql_error());
-		}
 		
-		echo "\n";
+		$query = $db->query("SELECT `domain` FROM `emails` WHERE  `domain_added_to_list` = '0' LIMIT".$records);
+	    $domains_array = $query->fetchAll(PDO::FETCH_ASSOC);
 		
-		console_output("Done getting email addresses.");
-		
-		console_output("Total Domains: " . number_format ( count ( $domains ) ) ) ;
-		$domains = array_unique($domains);
-		console_output("Unique Domains: " . number_format ( count ( $domains ) ) ) ;
+		foreach($domains_array as $domain){
+    		$domains[] = $domain['domain'];
+    	}
 		
 		$count = count( $domains );
 		
 		foreach ( $domains as $domain ) {
-			$input = mysql_query("INSERT IGNORE INTO `domains` 
-				(`domain`, `status`)
+			$input = mysql_query("INSERT IGNORE INTO `email_domains` 
+				(`domain`)
 				VALUE
-				('".$domain."', 'active')") or die(mysql_error());
+				('".$domain."')") or die(mysql_error());
 
 			console_output($count . ") ".$domain);
 
