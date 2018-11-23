@@ -225,7 +225,7 @@ if($task == 'domain_checker')
 	}
 }
 
-if($task == 'sanitize_emails')
+if($task == 'wash_emails')
 {
 	$records                = $argv[2];
 	$threads 				= $argv[3];
