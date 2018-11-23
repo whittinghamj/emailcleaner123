@@ -264,6 +264,8 @@ if($task == 'wash_emails')
 
 				if (in_array($data[$count]['domain'], $domains)) {
 
+				}
+
 				
 				console_output(
 					$colors->getColoredString(
