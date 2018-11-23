@@ -509,8 +509,8 @@ if($task == 'update_totals')
 if($task == 'get_domains')
 {
 
-	$records                = $argv[3];
-	$threads 				= $argv[2];
+	$records                = $argv[2];
+	$threads 				= $argv[3];
 
 	$pids = array();
 				
@@ -523,7 +523,7 @@ if($task == 'get_domains')
 			
 			include($base.'../inc/db.php');
 			
-			$records                = $argv[3];
+			$records                = $argv[2];
 			$random_start_point		= rand(000000,999999);
 
 			console_output("Getting email addresses.");
