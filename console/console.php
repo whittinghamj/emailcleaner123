@@ -307,8 +307,9 @@ if($task == 'domain_checker_multi')
 				
 				$records                = $argv[2];
 				$search_records         = $records;
+				$random_start_point		= rand(000000,999999);
 
-				$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' ORDER BY RAND() LIMIT ".$search_records);
+				$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' ORDER BY RAND() LIMIT ".$random_start_point.",".$search_records);
 		    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
 		    	$count = 1;
