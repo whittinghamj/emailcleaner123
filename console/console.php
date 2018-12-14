@@ -179,8 +179,9 @@ if($task == 'domain_checker')
 	if ( ( $pid = cronHelper::lock() ) !== FALSE ) {
 		$records                = $argv[2];
 		$search_records         = $records;
+		$random_start_point		= rand(000000,999999);
 
-		$query = $db->query("SELECT * FROM `email_domains` WHERE `last_checked` = '0' ORDER BY `id` LIMIT ".$search_records);
+		$query = $db->query("SELECT * FROM `email_domains` WHERE `last_checked` = '0' ORDER BY `id` LIMIT ".$random_start_point.",".$search_records);
     	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
     	$count = 0;
@@ -225,7 +226,7 @@ if($task == 'domain_checker')
 	}
 }
 
-if($task == 'wash_emails')
+if($task == 'sanitize_emails')
 {
 	$records                = $argv[2];
 	$threads 				= $argv[3];
@@ -246,14 +247,8 @@ if($task == 'wash_emails')
 			$search_records         = $records;
 			$random_start_point		= rand(000000,999999);
 
-			$query = $db->query("SELECT `domain` FROM `email_domains` WHERE  `status` = 'active' ");
-	    	$domains_array = $query->fetchAll(PDO::FETCH_ASSOC);
-
-	    	foreach($domains_array as $domain){
-	    		$domains[] = $domain['domain'];
-	    	}
-
-			$query = $db->query("SELECT `id`,`email` FROM `emails` WHERE  `last_checked` IS NULL LIMIT ".$random_start_point.",".$search_records);
+			$query = $db->query("SELECT `id`,`email` FROM `emails` WHERE  `domain` = '' LIMIT ".$random_start_point.",".$search_records);
+	    	// $query = $db->query(" SELECT * FROM `emails` WHERE `id` >= (SELECT FLOOR( MAX(`id`) * RAND()) FROM `emails` ) ORDER BY `id` LIMIT 1; ");
 	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
 	    	$count = 1;
@@ -261,26 +256,20 @@ if($task == 'wash_emails')
 			foreach($rows as $row){
 				$data[$count]['id']                    	= $row['id'];
 				$data[$count]['email']                	= $row['email'];
-				$bits 									= explode("@", $row['email']);
-				$data[$count]['domain']                	= $bits[1];
+				$data[$count]['bits']                	= explode("@", $row['email']);
+				$data[$count]['user']					= $data[$count]['bits'][0];
+				$data[$count]['domain']					= $data[$count]['bits'][1];
 
-				if (in_array($data[$count]['domain'], $domains)) {
-					// domain is active, lets mark checked_dns and checked_mx
-					$update = $db->exec("UPDATE `emails` SET `checked_dns` = '1' WHERE `id` = '".$data[$count]['id']."' ");
-					$update = $db->exec("UPDATE `emails` SET `checked_mx` = '1' WHERE `id` = '".$data[$count]['id']."' ");
+				$data[$count]['email'] 					= str_replace(array("\r", "\r\n","\n"), '', $data[$count]['email']);
+				$data[$count]['domain'] 				= str_replace(array("\r", "\r\n", "\n"), '', $data[$count]['domain']);
 
-					console_output(
-						$colors->getColoredString(
-							number_format($count) . ') "' . $data[$count]['email'] . '" passed DNS and MX checks.', 
-						"green", "black"));
-				}else{
-					console_output(
-						$colors->getColoredString(
-							number_format($count) . ') "' . $data[$count]['email'] . '" FAILED DNS and MX checks.', 
-						"red", "black"));
-				}
-
-				$update = $db->exec("UPDATE `emails` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
+				$update = $db->exec("UPDATE `emails` SET `email` = '".$data[$count]['email']."' WHERE `id` = '".$data[$count]['id']."' ");
+				$update = $db->exec("UPDATE `emails` SET `domain` = '".$data[$count]['domain']."' WHERE `id` = '".$data[$count]['id']."' ");
+				
+				console_output(
+					$colors->getColoredString(
+						number_format($count) . ') "' . $data[$count]['email'] . '" is now sanitized.', 
+					"green", "black"));
 
 				$count++;
 			}
@@ -303,73 +292,73 @@ if($task == 'domain_checker_multi')
 	// require $base.'../inc/cron.helper.php';
 	// if ( ( $pid = cronHelper::lock() ) !== FALSE ) 
 	// {
-	console_output("Spawning ".$threads." children.");
-	
-	$pids = array();
-			
-	for ( $i = 0; $i < $threads; $i++ ) 
-	{
-		$pids[$i] = pcntl_fork();
-
-		if ( !$pids[$i] ) 
+		console_output("Spawning ".$threads." children.");
+		
+		$pids = array();
+				
+		for ( $i = 0; $i < $threads; $i++ ) 
 		{
-			
-			include($base.'../inc/db.php');
-			
-			$records                = $argv[2];
-			$search_records         = $records;
+			$pids[$i] = pcntl_fork();
 
-			$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' ORDER BY RAND() LIMIT ".$search_records);
-	    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
-
-	    	$count = 1;
-			
-			foreach($rows as $row){
-				$data[$count]['id']                    = $row['id'];
-				$data[$count]['domain']                = $row['domain'];
-				$data[$count]['status']                = $row['status'];
+			if ( !$pids[$i] ) 
+			{
 				
-				if(checkdnsrr($data[$count]['domain'], 'ANY')){
-					// domain exists, lets set to active then check MX records
-					$update = $db->exec("UPDATE `email_domains` SET `status` = 'active' WHERE `id` = '".$data[$count]['id']."' ");
+				include($base.'../inc/db.php');
+				
+				$records                = $argv[2];
+				$search_records         = $records;
 
-					// validate mx
-					if(checkdnsrr($data[$count]['domain'], 'MX')){
-						// do nothing, its active and has a valid MX record
-						console_output(
-							$colors->getColoredString(
-								number_format($count) . ') "' . $data[$count]['domain'] . '" is active and has valid MX record.', 
-							"green", "black"));
+				$query = $db->query("SELECT * FROM `email_domains` WHERE  `last_checked` IS NULL OR  `last_checked` = '0' ORDER BY RAND() LIMIT ".$search_records);
+		    	$rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+		    	$count = 1;
+				
+				foreach($rows as $row){
+					$data[$count]['id']                    = $row['id'];
+					$data[$count]['domain']                = $row['domain'];
+					$data[$count]['status']                = $row['status'];
+					
+					if(checkdnsrr($data[$count]['domain'], 'ANY')){
+						// domain exists, lets set to active then check MX records
+						$update = $db->exec("UPDATE `email_domains` SET `status` = 'active' WHERE `id` = '".$data[$count]['id']."' ");
+
+						// validate mx
+						if(checkdnsrr($data[$count]['domain'], 'MX')){
+							// do nothing, its active and has a valid MX record
+							console_output(
+								$colors->getColoredString(
+									number_format($count) . ') "' . $data[$count]['domain'] . '" is active and has valid MX record.', 
+								"green", "black"));
+						}else{
+							console_output(
+								$colors->getColoredString(
+									number_format($count) . ') "' . $data[$count]['domain'] . '" is active but has no MX record.', 
+								"blue", "black"));
+							$update = $db->exec("UPDATE `email_domains` SET `status` = 'mxserver_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
+
+						}
 					}else{
+						// domain does not exist
 						console_output(
-							$colors->getColoredString(
-								number_format($count) . ') "' . $data[$count]['domain'] . '" is active but has no MX record.', 
-							"blue", "black"));
-						$update = $db->exec("UPDATE `email_domains` SET `status` = 'mxserver_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
-
+								$colors->getColoredString(
+									number_format($count) . ') "' . $data[$count]['domain'] . '" is not active.', 
+								"red", "black"));
+						$update = $db->exec("UPDATE `email_domains` SET `status` = 'domain_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
 					}
-				}else{
-					// domain does not exist
-					console_output(
-							$colors->getColoredString(
-								number_format($count) . ') "' . $data[$count]['domain'] . '" is not active.', 
-							"red", "black"));
-					$update = $db->exec("UPDATE `email_domains` SET `status` = 'domain_does_not_exist' WHERE `id` = '".$data[$count]['id']."' ");
-				}
 
-				$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
+					$update = $db->exec("UPDATE `email_domains` SET `last_checked` = '".time()."' WHERE `id` = '".$data[$count]['id']."' ");
+					
+					$count++;
+				}
 				
-				$count++;
+				exit();
 			}
-			
-			exit();
 		}
-	}
-	
-	for ( $i = 0; $i < $threads; $i++ ) 
-	{
-		pcntl_waitpid($pids[$i], $status, WUNTRACED);
-	}
+		
+		for ( $i = 0; $i < $threads; $i++ ) 
+		{
+			pcntl_waitpid($pids[$i], $status, WUNTRACED);
+		}
 	// }else{
 	// 	console_output(
 	// 		$colors->getColoredString(
@@ -508,54 +497,43 @@ if($task == 'update_totals')
 
 if($task == 'get_domains')
 {
-
-	$records                = $argv[3];
-	$threads 				= $argv[2];
-
-	console_output("Spawning ".$threads." children with ".$records." jobs each.");
-
-	$pids = array();
-				
-	for ( $i = 0; $i < $threads; $i++ ) 
-	{
-		$pids[$i] = pcntl_fork();
-
-		if ( !$pids[$i] ) 
-		{
+	$records                = $argv[2];
+	require $base.'../inc/cron.helper.php';
+	if ( ( $pid = cronHelper::lock() ) !== FALSE ) {
+		console_output("Getting email addresses.");
+		$query 		= "SELECT `id`,`email`,`domain` FROM `emails` WHERE `domain` = '' ORDER BY `id` LIMIT ".$records;
+		$result		= mysql_query($query) or die(mysql_error());
+		$count		= mysql_num_rows($result);
+		while($row = mysql_fetch_array($result)){
+			$id					= $row['id'];
+			$bits				= explode("@", $row['email']);
+			$domains[]			= $bits[1];
 			
-			include($base.'../inc/db.php');
+			console_output("Processing ".$row['email'] . " | " . $row['domain']);
 			
-			$records                = $argv[3];
-			$random_start_point		= rand(000000,999999);
-			
-			$query = $db->query("SELECT `domain` FROM `emails` WHERE `domain` NOT IN (SELECT `domain` FROM `email_domains`)");
-			// $query = $db->query("SELECT `domain` FROM `emails` WHERE `domain_added_to_list` = '0' LIMIT ".$random_start_point.",".$records);
-		    $domains_array = $query->fetchAll(PDO::FETCH_ASSOC);
-			
-			foreach($domains_array as $domain){
-	    		$domains[] = $domain['domain'];
-	    	}
-			
-			$count = count( $domains );
-			
-			foreach ( $domains as $domain ) {
-				$insert = $db->exec("INSERT IGNORE INTO `email_domains` 
-					(`domain`)
-					VALUE
-					('".$domain."')");
-
-				console_output(number_format($count) . ") ".$domain);
-
-				$count = $count - 1;
-			}
-
-			exit();
+			mysql_query("UPDATE `emails` SET `domain` = '".$bits[1]."' WHERE `id` = '".$id."' ") or die(mysql_error());
 		}
-	}
+		
+		echo "\n";
+		
+		console_output("Done getting email addresses.");
+		
+		console_output("Total Domains: " . number_format ( count ( $domains ) ) ) ;
+		$domains = array_unique($domains);
+		console_output("Unique Domains: " . number_format ( count ( $domains ) ) ) ;
+		
+		$count = count( $domains );
+		
+		foreach ( $domains as $domain ) {
+			$input = mysql_query("INSERT IGNORE INTO `domains` 
+				(`domain`, `status`)
+				VALUE
+				('".$domain."', 'active')") or die(mysql_error());
 
-	for ( $i = 0; $i < $threads; $i++ ) 
-	{
-		pcntl_waitpid($pids[$i], $status, WUNTRACED);
+			console_output($count . ") ".$domain);
+
+			$count = $count - 1;
+		}
 	}
 }
 
@@ -604,24 +582,6 @@ if($task == 'get_domains_2')
 			$count = $count - 1;
 		}
 	}
-}
-
-if($task == 'import_multi')
-{
-	$threads 				= $argv[2];
-	
-	console_output("Spawning ".$threads." children.");
-	
-	for ($i=0; $i<$runs; $i++) {
-        for ($j=0; $j<$count; $j++) {
-            $pipe[$j] = popen("php -q run apt_update_process ".$slaves[$j], 'w');
-        }
-        
-        // wait for them to finish
-        for ($j=0; $j<$count; ++$j) {
-            pclose($pipe[$j]);
-        }
-    }
 }
 
 // close the msyql / pdo connection
